@@ -1,0 +1,97 @@
+    //取得伺服器資料
+    private ProgressDialog dialog = null;
+    private myAsyncTast tast
+    
+    
+    
+    //Server取得
+    class myAsyncTast extends AsyncTask<Void, Integer, Void> {
+
+        String result;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            dialog = ProgressDialog.show(MainActivity.this, "從伺服器下載", "正在下載，請稍後...", false);//創建ProgressDialog
+        }
+
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            //創建一個伺服器溝通
+            if (isOnline(server_url)) {
+                //創建一個伺服器溝通
+                GetData server =
+                        new GetData(server_url + "/Just/Phone/GetData.jsp");
+                result = server.toString();
+                publishProgress(1);
+            } else {
+                publishProgress(0);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            dialog.dismiss();
+            if (values[0] == 1) {
+                Log.d("回傳資料", result);
+                //資料分析
+                try {
+                    decodeJson(result);
+                    //設定最新消息
+                    setContent();
+
+                    //BEACON
+                    init_Beacon();
+                    Toast.makeText(MainActivity.this, "下載成功", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "尚未新增幅畫資訊", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(MainActivity.this, "伺服器尚未開機", Toast.LENGTH_SHORT).show();
+            }
+
+        }
+
+        //測試是否可連線到SQL
+        private boolean isOnline(String test_url) {
+            try {
+                java.net.URL url = new java.net.URL(
+                        test_url);
+                java.net.HttpURLConnection uc = (java.net.HttpURLConnection) url
+                        .openConnection();
+                uc.setRequestProperty("User-agent", "IE/6.0");
+                uc.setReadTimeout(5000);// 設定timeout時間
+                uc.connect();// 連線
+                System.out.println("網址/ip位置:" + java.net.Inet4Address.getByName(url.getHost()));
+                int status = uc.getResponseCode();
+                System.out.println(status);
+                switch (status) {
+                    case java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT://504
+                        System.out.println("連線網址逾時!");
+                        break;
+                    case java.net.HttpURLConnection.HTTP_FORBIDDEN://403
+                        System.out.println("連線網址禁止!");
+                        break;
+                    case java.net.HttpURLConnection.HTTP_INTERNAL_ERROR://500
+                        System.out.println("連線網址錯誤或不存在!");
+                        break;
+                    case java.net.HttpURLConnection.HTTP_NOT_FOUND://404
+                        System.out.println("連線網址不存在!");
+                        break;
+                    case java.net.HttpURLConnection.HTTP_OK:
+                        return true;
+                }
+
+            } catch (java.net.MalformedURLException e) {
+                System.out.println("網址格式錯誤!!!");
+                e.printStackTrace();
+            } catch (java.io.IOException e) {
+                System.out.println("連線有問題!!!!!!");
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+    }
