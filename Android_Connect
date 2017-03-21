@@ -1,0 +1,74 @@
+package com.project.jimmyyang.just.Server;
+
+import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+/**
+ * Created by Jimmy on 2017/3/18.
+ */
+
+public class GetData {
+    //伺服器網址
+    private String url;
+
+    public GetData(String url) {
+        this.url = url;
+    }
+
+    //取得資料
+    public String toString() {
+        HttpURLConnection conn = null;
+        try {
+            // 創建一個URL伺服器地址
+            URL mURL = new URL(url);
+            // 使用URL的openConnection()方法,獲取HttpURLConnection對象
+            conn = (HttpURLConnection) mURL.openConnection();
+
+            conn.setRequestMethod("POST");// 設置請求方法為post
+            conn.setReadTimeout(5000);// 設置讀取超時為5秒
+            conn.setConnectTimeout(10000);// 設置連結網路時間為10秒
+            conn.setDoOutput(true);// 設置此方法,允許向伺服器输出内容
+
+            // post請求的参数
+            int responseCode = conn.getResponseCode();// 使用此方法就不必再使用conn.connect()方法
+            if (responseCode == 200) {
+                //請求成功
+                InputStream is = conn.getInputStream();
+                String state = getStringFromInputStream(is);
+                return state;
+            } else {
+                //請求失敗
+                Log.d("SendData", "送出失敗:" + responseCode);
+                return "連線失敗失敗";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "連線失敗失敗" + e.toString();
+        } finally {
+            if (conn != null) {
+                conn.disconnect();// 關閉連線
+            }
+        }
+    }
+
+    private String getStringFromInputStream(InputStream is)
+            throws IOException {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len = -1;
+        // 一定要寫len=is.read(buffer)
+        // 如果while((is.read(buffer))!=-1)則無法將數據寫入buffer中
+        while ((len = is.read(buffer)) != -1) {
+            os.write(buffer, 0, len);
+        }
+        is.close();
+        String state = os.toString();// 串流中的數據轉成字串,採用的編碼是utf-8(模擬器預設編碼)
+        os.close();
+        return state;
+    }
+}
